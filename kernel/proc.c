@@ -140,6 +140,11 @@ found:
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
+  
+  // Initialize alarmticks
+  p->alarmticks = 0;
+  p->alarminterval = 0;
+  p->sigreturned = 1;
 
   return p;
 }

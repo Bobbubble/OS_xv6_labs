@@ -1,0 +1,49 @@
+> *问题1*   
+> Which registers contain arguments to functions? For example, which register holds 13 in main's call to printf?<br>
+
+通过阅读`call.asm`文件中的 main 函数可知，调用 printf 函数时，13 被寄存器 a2 保存。因此传递给函数的参数由 a1, a2, a3 等通用寄存器保存；13 被寄存器 a2 保存。<br><br>
+> *问题2*   
+> Where is the call to function f in the assembly code for main? Where is the call to g? <br>
+
+查看`call.asm`文件中的f和g函数可知，函数 f 调用函数 g，函数 g 将传入的参数加 3 后返回。此外，编译器会进行内联优化，即在编译的时候完成可以计算的结果，避免了重复进行函数调用。<br><br>
+
+查看 main 函数我们可以发现 printf 中包含对 f 的调用，但是汇编代码将 f(8)+1 替换为 12 。说明编译器对这个函数调用进行了优化，没有重复调用 f 和 g ，而是直接进行内联优化。<br><br>
+
+因此，main 的汇编代码没有调用 f 和 g 函数，同时编译器对其进行了优化。
+
+> *问题3*   
+> At what address is the function printf located?<br>
+
+在`call.asm`文件中查看printf的地址在`0x630`
+
+> *问题4*   
+> What value is in the register ra just after the jalr to printf in main?<br>
+
+首先在语句`auipc ra,0x0`中，当前程序计数器 pc 的值存入寄存器 ra 中。<br><br>
+
+然后在语句`jalr 1536(ra)`中，跳转到printf所在地址，即 0x630 地址。在执行完这句命令之后， 寄存器 ra 的值设置为 pc + 4 ，也就是 0x38。<br><br>
+
+因此 jalr 指令执行完毕之后，ra 的值为 0x38.
+
+> *问题5*   
+> Run the following code.
+> ```
+>   unsigned int i = 0x00646c72;
+>   printf("H%x Wo%s", 57616, &i);
+> ```
+> The output depends on that fact that the RISC-V is little-endian. If the RISC-V were instead big-endian what would you set i to in order to yield the same output? Would you need to change 57616 to a different value?<br>
+
+运行结果为`He110 World`<br><br>
+
+因为`57616`的十六进制表示为`e110`，所以格式化描述符 %x 打印出前半部分的He110。又因为在小端处理器中，数据`0x00646c72`的高字节存储在内存的高位，因此数据对应的 ASCII 字符为 `rld`，所以打印出的后半部分为world。<br><br>
+
+如果在大端处理器中，数据`0x00646c72`的高字节存储在内存的低位，对应的ASCII 码为`dlr`。因此如果需要满足大端序和小端序输出相同的内容 i ，则数据的值应该为 `0x726c64`。
+
+
+> *问题6*   
+> In the following code, what is going to be printed after 'y='? (note: the answer is not a specific value.) Why does this happen?
+>```
+>   printf("x=%d y=%d", 3);
+>```
+
+函数的参数是通过寄存器a1, a2 等来传递。如果 prinf 少传递一个参数，那么其仍会从一个确定的寄存器中读取其想要的参数值，但是我们并没有给出这个确定的参数并将其存储在寄存器中，所以函数将从此寄存器中获取到一个随机的不确定的值作为其参数。因此`y=`后面的值我们不能够确定，它是一个垃圾值。
